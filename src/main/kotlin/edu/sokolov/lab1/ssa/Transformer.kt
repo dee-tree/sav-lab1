@@ -25,7 +25,7 @@ import org.jetbrains.kotlin.psi.stubs.ConstantValueKind
 class Transformer(val ctx: Context = Context()) {
     // returns the last basic block
     fun transform(decl: KtDeclaration): BasicBlock {
-        val head = BasicBlock()
+        val head = BasicBlock(name = "entry")
         if (decl is KtFunction) {
             transformFunction(decl, head)
         } else TODO()
@@ -67,8 +67,8 @@ class Transformer(val ctx: Context = Context()) {
     // returns exit merged block
     private fun transformIf(expr: KtIfExpression, bb: BasicBlock): BasicBlock {
         val headDefinitions = ctx.definitions(bb)
-        val merged = BasicBlock()
-        val trueBranch = BasicBlock()
+        val merged = BasicBlock(name = "if_merged")
+        val trueBranch = BasicBlock(name = "if_true")
 
         headDefinitions.forEach { def ->
             trueBranch += Assignment(def.definition.new(), PhiExpr(def))
@@ -76,7 +76,7 @@ class Transformer(val ctx: Context = Context()) {
 
         transformExpr(expr.then!!, trueBranch).also { it.exit = BasicBlock.Exit.Unconditional(merged) }
         val falseBranch = expr.`else`?.let { elseExpr ->
-            val b = BasicBlock()
+            val b = BasicBlock(name = "if_false")
 
             headDefinitions.forEach { def ->
                 b += Assignment(def.definition.new(), PhiExpr(def))
@@ -86,7 +86,7 @@ class Transformer(val ctx: Context = Context()) {
             b
         } ?: merged
 
-        val condBlock = BasicBlock()
+        val condBlock = BasicBlock(name = "if_cond")
 
         headDefinitions.forEach { def ->
             condBlock += Assignment(def.definition.new(), PhiExpr(def))
@@ -206,7 +206,7 @@ class Transformer(val ctx: Context = Context()) {
             }
         }
 
-        val loopCondBlock = BasicBlock(name = "For cond")
+        val loopCondBlock = BasicBlock(name = "for_cond")
         ctx.definitions(nextBB).forEach { def -> loopCondBlock += Assignment(def.definition.new(), PhiExpr(def)) }
 
         nextBB.exit = BasicBlock.Exit.Unconditional(loopCondBlock)
@@ -216,7 +216,7 @@ class Transformer(val ctx: Context = Context()) {
 
         loopCondBlock += Assignment(loopParam, MemberCallExpr(ctx.resolve(loopRange.definition.name, loopCondBlock), "next"))
 
-        val loopBlock = BasicBlock(name = "For body")
+        val loopBlock = BasicBlock(name = "for_body")
         ctx.definitions(loopCondBlock).forEach { def -> loopBlock += Assignment(def.definition.new(), PhiExpr(def)) }
         loopBlock.addPredecessor(loopCondBlock)
 
@@ -224,7 +224,7 @@ class Transformer(val ctx: Context = Context()) {
 
         loopCondBlock.addPredecessor(nextBB)
 
-        val mergedBlock = BasicBlock(name = "For merged")
+        val mergedBlock = BasicBlock(name = "for_merged")
         ctx.definitions(loopCondBlock).forEach { def -> if (def != loopParam) mergedBlock += Assignment(def.definition.new(), PhiExpr(def)) }
         mergedBlock.addPredecessor(loopCondBlock)
 

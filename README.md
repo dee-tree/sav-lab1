@@ -1,0 +1,14 @@
+# Lab on static analysis & software verification
+
+SSA introduction for Kotlin.
+
+
+
+## How ssa representation looks like in this work?
+Kotlin SSA is dumped to mermaid-format graph into the file during run.
+All optimization stages are saved in different files.
+
+## Where watch mermaid?
+
+- [drawio](https://app.diagrams.net/)
+- [mermaid](https://mermaid.live/edit#pako:eNptU2Fv0zAQ_SsnC6ohrS3ax4pu2tqhDY2BtiEEy4Tc-JKYOXbks1eqdv-ds9MwkPAn23fP792781aUTqGYicq4ddlIH-BuWVjgdXp_5aTStoYvN1dQSW1QTeArQiktBL-B4KDSdfQILgZYN5vJA4zHx7slpjfhw-2n6x2cHXw2KIlRDZaPEBreOUvOYMITYr5KuSCtAvTeeVAYmI4mb3olZ-lZWGwv6SW5dN5jGU6e-5RFZv6GtIPlwLgwmhkb9JnqRmq-Y-maKCJoC7UOTVxN3q389PjSlibmYhPDyrtHtGC0fUyJ6apH5VxYa2OAOkQFscvRSv8axPZKrt0OzrdLrYBci87uoYRc48ZFBmnK7w8FnL8U8P7-lLJTbW8RQzK4xyX_2s5gwIx_-BueWNld9eooUydA6brNXvY_WO7pQN0jsse7QlTSEBaCffxf9NrB7CBFLw7ueAQiDZbd6RZZD1stV8mzC03B-T115V0LJNvs7JrQZ2mR2ECusPQoQz8HSsvay3bwsswdXELjsYJCNCF0NJtO943jWqYt-lZqNf5Jf7ZGP-EYlWb6ae4aTS2uTySRri0izUdGrtDQfBXrUUD2g9nT4YfHzvkwadUo6GBwfpbH4PXR22R0IVhBP0T51UKIQ7Hn5P-zTYoLkbrGoRlvlfQMKuwz58kY3O3GlmIWfMRD4V2sm-EQO8UKln3pw2Un7Xfn-Jj7cSj6gj72nzX_2effYIFAyA)

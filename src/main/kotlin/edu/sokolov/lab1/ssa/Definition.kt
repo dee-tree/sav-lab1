@@ -7,7 +7,7 @@ data class Definition(val name: String) {
 
     open class Stamp(val id: Long, val definition: Definition): Expr {
         override fun toString(): String {
-            return "Stamp(${definition.name}_$id)"
+            return "${definition.name}\$$id"
         }
     }
 

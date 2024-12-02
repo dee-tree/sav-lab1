@@ -1,8 +1,10 @@
 package edu.sokolov.lab1
 
 
+import edu.sokolov.lab1.diagram.toDiagramBuilder
 import edu.sokolov.lab1.opt.constPropagation
 import edu.sokolov.lab1.opt.eliminateRedundantPhi
+import edu.sokolov.lab1.opt.tmpPropagation
 import edu.sokolov.lab1.ssa.Transformer
 import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
@@ -11,6 +13,8 @@ import org.jetbrains.kotlin.com.intellij.psi.PsiManager
 import org.jetbrains.kotlin.com.intellij.testFramework.LightVirtualFile
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.psi.KtFile
+import java.io.File
+import kotlin.math.tan
 
 //val code = """
 //fun hello() {
@@ -62,6 +66,9 @@ fun hello() {
 
 
 fun main() {
+    val diagramFileName = "ssa-diagram"
+    val diagramFileExt = "txt"
+
     println("Hello")
 
     val project = KotlinCoreEnvironment.createForProduction(
@@ -74,12 +81,27 @@ fun main() {
 
     val transformer = Transformer()
     ktfile.declarations.forEach(transformer::transform)
-    ktfile.declarations.forEach { println(it::class.simpleName) }
 
     val bb = transformer.transform(ktfile.declarations.first())
 
     val propagated = constPropagation(bb)
     val phiEliminated = eliminateRedundantPhi(propagated)
+    val tmpEliminated = tmpPropagation(transformer.ctx, phiEliminated)
 
-    println(ktfile)
+    File("${diagramFileName}_unoptimized.$diagramFileExt").also { file ->
+        bb.toDiagramBuilder().toFile(file)
+    }
+
+    File("${diagramFileName}_const-prop.$diagramFileExt").also { file ->
+        propagated.toDiagramBuilder().toFile(file)
+    }
+
+    File("${diagramFileName}_phi-elim.$diagramFileExt").also { file ->
+        phiEliminated.toDiagramBuilder().toFile(file)
+    }
+
+    File("${diagramFileName}.$diagramFileExt").also { file ->
+        tmpEliminated.toDiagramBuilder().toFile(file)
+    }
+
 }

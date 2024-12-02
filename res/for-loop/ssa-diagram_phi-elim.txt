@@ -1,0 +1,11 @@
+flowchart TD
+	entry$10("__tmp$0 = 1<br>__tmp$1 = 2<br>__tmp$2 = 3<br>__tmp$3 = 4<br>__tmp$4 = (3 + 4)<br>__tmp$5 = 5<br>__tmp$6 = listOf$0<br>__tmp$7 = __tmp$6(1, 2, __tmp$4, last=5)<br>list$0 = __tmp$7<br>__tmp$8 = list$0")
+	for_body$14("__tmp$9 = i$0<br>__tmp$10 = println$0<br>__tmp$11 = __tmp$10(__tmp$9)")
+	for_cond$11("i$0 = list$0.next()")
+	for_merged$13("exit")
+	cond$12{"(i$0 == null)"}
+	for_body$14 -->  for_cond$11
+	cond$12 --> |"false"| for_body$14
+	for_cond$11 -->  cond$12
+	cond$12 --> |"true"| for_merged$13
+	entry$10 -->  for_cond$11

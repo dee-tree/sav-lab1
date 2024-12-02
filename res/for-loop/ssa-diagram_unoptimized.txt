@@ -1,0 +1,11 @@
+flowchart TD
+	cond$2{"(i$0 == null)"}
+	for_body$4("i$1 = φ(i$0)<br>list$2 = φ(list$1)<br>__tmp$9 = i$1<br>__tmp$10 = println$0<br>__tmp$11 = __tmp$10(__tmp$9)")
+	for_cond$1("list$1 = φ(list$0)<br>i$0 = list$1.next()")
+	for_merged$3("list$3 = φ(list$1)")
+	entry$0("__tmp$0 = 1<br>__tmp$1 = 2<br>__tmp$2 = 3<br>__tmp$3 = 4<br>__tmp$4 = (__tmp$2 + __tmp$3)<br>__tmp$5 = 5<br>__tmp$6 = listOf$0<br>__tmp$7 = __tmp$6(__tmp$0, __tmp$1, __tmp$4, last=__tmp$5)<br>list$0 = __tmp$7<br>__tmp$8 = list$0")
+	entry$0 -->  for_cond$1
+	for_cond$1 -->  cond$2
+	for_body$4 -->  for_cond$1
+	cond$2 --> |"true"| for_merged$3
+	cond$2 --> |"false"| for_body$4
