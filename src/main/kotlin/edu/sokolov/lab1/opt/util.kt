@@ -7,6 +7,7 @@ import edu.sokolov.lab1.ssa.ConstExpr
 import edu.sokolov.lab1.ssa.Definition
 import edu.sokolov.lab1.ssa.Expr
 import edu.sokolov.lab1.ssa.MemberCallExpr
+import edu.sokolov.lab1.ssa.NamedArgument
 import edu.sokolov.lab1.ssa.PhiExpr
 
 /**
@@ -39,8 +40,9 @@ operator fun Expr.contains(what: Definition.Stamp): Boolean {
         is PhiExpr -> what in predecessors
         is ConstExpr<*> -> false
         is MemberCallExpr -> what in base || args.any { what in it }
-        is CallExpr -> what in base || args.any { what in it }
+        is CallExpr -> what in callee || args.any { what in it }
         is Expr.Undefined -> false
+        is NamedArgument<*> -> what in value
     }
 }
 
@@ -50,34 +52,6 @@ fun BasicBlock.findConst(): Int? {
     }
     return null
 }
-
-//fun Expr.substitute(before: Expr, after: Expr): Expr {
-//    return when (this) {
-//        is Definition.Stamp -> this
-//        is BinaryExpr -> {
-//            val newLeft = if (left == before) after else left.substitute(before, after)
-//            val newRight = if (right == before) after else right.substitute(before, after)
-//            BinaryExpr(newLeft, op, newRight)
-//        }
-//        is PhiExpr -> {
-//            if (before !in predecessors) return this
-//            if (after !is Definition.Stamp) return this
-//            PhiExpr(predecessors.map { if (it == before) after else it })
-//        }
-//        is ConstExpr<*> -> this
-//        is MemberCallExpr -> {
-//            val newBase = if (base == before) after else base.substitute(before, after)
-//            val newArgs = args.map { if (it == before) after else it.substitute(before, after) }
-//            MemberCallExpr(newBase, method, newArgs)
-//        }
-//        is CallExpr -> {
-//            val newBase = if (base == before) after else base.substitute(before, after)
-//            val newArgs = args.map { if (it == before) after else it.substitute(before, after) }
-//            CallExpr(newBase, newArgs)
-//        }
-//        is Expr.Undefined -> this
-//    }
-//}
 
 fun Expr.substitute(before: Expr, after: Expr): Expr {
     return when (this) {
@@ -99,11 +73,12 @@ fun Expr.substitute(before: Expr, after: Expr): Expr {
             MemberCallExpr(newBase, method, newArgs)
         }
         is CallExpr -> {
-            val newBase = base.substitute(before, after)
+            val newBase = callee.substitute(before, after)
             val newArgs = args.map { it.substitute(before, after) }
             CallExpr(newBase, newArgs)
         }
         is Expr.Undefined -> this
+        is NamedArgument<*> -> NamedArgument(name = name, value = value.substitute(before, after))
     }
 }
 

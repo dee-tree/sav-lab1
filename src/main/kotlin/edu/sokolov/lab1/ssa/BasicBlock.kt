@@ -2,7 +2,7 @@ package edu.sokolov.lab1.ssa
 
 import java.util.Objects
 
-class BasicBlock(next: Exit = Exit.NoNext) : Statement {
+class BasicBlock(next: Exit = Exit.NoNext, val name: String? = null) : Statement {
     private val childs = ArrayList<Assignment>()
     val children: List<Assignment>
         get() = childs
@@ -32,15 +32,26 @@ class BasicBlock(next: Exit = Exit.NoNext) : Statement {
         childs.add(pos, node)
     }
 
+    override fun toString(): String {
+        return "BasicBlock(${name ?: ""} with ${childs.size} nodes)"
+    }
+
     override fun hashCode(): Int {
-        return Objects.hash(exit, *childs.toTypedArray())
+        return Objects.hash(exitHash(), *childs.toTypedArray())
+    }
+
+    private fun exitHash() = when (exit) {
+        is Exit.NoNext -> 10
+        is Exit.Unconditional -> 100
+        is Exit.Conditional -> 1_000
+        is Exit.Ret -> 10_000
     }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
         other as BasicBlock
-        if (exit != other.exit) return false
+        if (exitHash() != other.exitHash()) return false
         if (childs.size != other.childs.size) return false
         return childs.zip(other.childs).all { (c1, c2) -> c1 == c2 }
     }
@@ -55,15 +66,4 @@ class BasicBlock(next: Exit = Exit.NoNext) : Statement {
             val falseBlock: BasicBlock
         ) : Exit(cond, null)
     }
-
-//    sealed class Exit(open val cond: Definition.Stamp?, open val next: BasicBlock?) {
-//        data object NoNext : Exit(null, null)
-//        data class Unconditional(override val next: BasicBlock) : Exit(null, next)
-//        data class Ret(val ret: Definition.Stamp) : Exit(null, null)
-//        data class Conditional(
-//            override val cond: Definition.Stamp,
-//            val trueBlock: BasicBlock,
-//            val falseBlock: BasicBlock
-//        ) : Exit(cond, null)
-//    }
 }

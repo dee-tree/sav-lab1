@@ -1,9 +1,13 @@
 package edu.sokolov.lab1.ssa
 
-class Context {
+/**
+ * @param isStrict - should ban unknown identifiers or add it in globals
+ */
+class Context(val isStrict: Boolean = false) {
+    private val globals = hashMapOf<String, Definition>()
+
     private val definitions = arrayListOf(hashMapOf<String, Definition>())
     private var scope = 0
-
 
     private val currentLevel: HashMap<String, Definition>
         get() = definitions.last()
@@ -23,7 +27,13 @@ class Context {
             if (assignment.lhs.definition.name == id) return assignment.lhs
         }
 
-        throw IllegalStateException("Definition $id not found in basic block")
+        if (isStrict)
+            throw IllegalStateException("Definition $id not found in basic block")
+        else {
+            val def = Definition(id)
+            globals[id] = def
+            return def.new()
+        }
     }
 
     fun merge(id: String, bb: BasicBlock): PhiExpr {

@@ -1,12 +1,15 @@
 package edu.sokolov.lab1.ssa
 
+import org.jetbrains.kotlin.diagnostics.impl.BaseDiagnosticsCollector
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtBinaryExpression
 import org.jetbrains.kotlin.psi.KtBlockExpression
 import org.jetbrains.kotlin.psi.KtBlockStringTemplateEntry
+import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtConstantExpression
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtExpression
+import org.jetbrains.kotlin.psi.KtForExpression
 import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.kotlin.psi.KtIfExpression
 import org.jetbrains.kotlin.psi.KtLiteralStringTemplateEntry
@@ -45,6 +48,8 @@ class Transformer(val ctx: Context = Context()) {
     private fun transformExpr(expr: KtExpression, bb: BasicBlock): BasicBlock {
         return when (expr) {
             is KtIfExpression -> transformIf(expr, bb)
+            is KtForExpression -> transformForLoop(expr, bb)
+            is KtCallExpression -> transformCallExpr(expr, bb)
             is KtBinaryExpression -> transformBinaryExpr(expr, bb)
             is KtPrefixExpression -> transformPrefixExpr(expr, bb)
             is KtPostfixExpression -> transformPostfixExpr(expr, bb)
@@ -120,8 +125,6 @@ class Transformer(val ctx: Context = Context()) {
         }
 
         val base = ctx.resolve(expr.baseExpression!!.text, bb)
-//        val nextBB = transformExpr(expr.baseExpression!!, bb)
-//        val base = nextBB.children.last().lhs
         val res = Assignment(ctx.tmp(), base)
         val one = Assignment(ctx.tmp(), ConstExpr.IntLiteral(1)).also { bb += it }.lhs
         Assignment(base.definition.new(), BinaryExpr(base, op, one)).also { bb += it }
@@ -138,8 +141,6 @@ class Transformer(val ctx: Context = Context()) {
             else -> throw IllegalStateException("Unknown prefix op: ${expr.operationToken} in $expr")
         }
 
-//        val nextBB = transformExpr(expr.baseExpression!!, bb)
-//        val base = nextBB.children.last().lhs
         val base = ctx.resolve(expr.baseExpression!!.text, bb)
         val one = Assignment(ctx.tmp(), ConstExpr.IntLiteral(1)).also { bb += it }.lhs
         Assignment(base.definition.new(), BinaryExpr(base, op, one)).also { bb += it }
@@ -192,30 +193,84 @@ class Transformer(val ctx: Context = Context()) {
         return nextBB
     }
 
+    private fun transformForLoop(expr: KtForExpression, bb: BasicBlock): BasicBlock {
+        ctx.push()
+
+        var nextBB = transformExpr(expr.loopRange!!, bb)
+        val loopRange = nextBB.children.last().let { asg ->
+            if (asg.rhs is Definition.Stamp) asg.rhs
+            else {
+                val stamp = ctx.introduce("for_lab\$${asg.lhs.definition.name}${asg.lhs.id}")
+                nextBB += Assignment(stamp, asg.lhs)
+                stamp
+            }
+        }
+
+        val loopCondBlock = BasicBlock(name = "For cond")
+        ctx.definitions(nextBB).forEach { def -> loopCondBlock += Assignment(def.definition.new(), PhiExpr(def)) }
+
+        nextBB.exit = BasicBlock.Exit.Unconditional(loopCondBlock)
+        loopCondBlock.addPredecessor(nextBB)
+
+        val loopParam = ctx.introduce(expr.loopParameter!!.text)
+
+        loopCondBlock += Assignment(loopParam, MemberCallExpr(ctx.resolve(loopRange.definition.name, loopCondBlock), "next"))
+
+        val loopBlock = BasicBlock(name = "For body")
+        ctx.definitions(loopCondBlock).forEach { def -> loopBlock += Assignment(def.definition.new(), PhiExpr(def)) }
+        loopBlock.addPredecessor(loopCondBlock)
+
+        nextBB = transformExpr(expr.body!!, loopBlock)
+
+        loopCondBlock.addPredecessor(nextBB)
+
+        val mergedBlock = BasicBlock(name = "For merged")
+        ctx.definitions(loopCondBlock).forEach { def -> if (def != loopParam) mergedBlock += Assignment(def.definition.new(), PhiExpr(def)) }
+        mergedBlock.addPredecessor(loopCondBlock)
+
+        loopBlock.exit = BasicBlock.Exit.Unconditional(loopCondBlock)
+
+        loopCondBlock.exit = BasicBlock.Exit.Conditional(BinaryExpr(loopParam, "==", ConstExpr.NullLiteral), mergedBlock, loopBlock)
+
+        ctx.pop()
+        return bb
+    }
+
+    private fun transformCallExpr(expr: KtCallExpression, bb: BasicBlock): BasicBlock {
+        var nextBB = bb
+
+        val args = expr.valueArguments.map { arg ->
+            nextBB = transformExpr(arg.children.last() as KtExpression, nextBB)
+            val argStamp = nextBB.children.last().lhs
+            if (arg.isNamed()) NamedArgument(arg.getArgumentName()!!.text, argStamp) else argStamp
+        }
+
+        nextBB = transformExpr(expr.calleeExpression!!, nextBB)
+        val callee = nextBB.children.last().lhs
+        nextBB += Assignment(ctx.tmp(), CallExpr(callee, args))
+
+        return nextBB
+    }
 
     private fun transformLiteralStringTemplateEntry(expr: KtLiteralStringTemplateEntry, bb: BasicBlock): Definition.Stamp {
-        println("string template entry: ${expr.text}")
         val res = ctx.tmp()
         bb += Assignment(res, ConstExpr.StringLiteral(expr.text!!))
         return res
     }
 
     private fun transformSimpleNameTemplateEntry(expr: KtSimpleNameStringTemplateEntry, bb: BasicBlock): BasicBlock {
-        println("string template entry: ${expr.text}")
         val nextBB = transformExpr(expr.expression!!, bb)
         nextBB += Assignment(ctx.tmp(), MemberCallExpr(nextBB.children.last().lhs, "toString"))
         return nextBB
     }
 
     private fun transformBlockTemplateEntry(expr: KtBlockStringTemplateEntry, bb: BasicBlock): BasicBlock {
-        println("string block template entry: ${expr.text}")
         val nextBB = transformExpr(expr.expression!!, bb)
         nextBB += Assignment(ctx.tmp(), MemberCallExpr(nextBB.children.last().lhs, "toString"))
         return nextBB
     }
 
     private fun transformStringTemplateExpr(expr: KtStringTemplateExpression, bb: BasicBlock): BasicBlock {
-        println("string template of: ${expr.text}")
         var nextBB = bb
 
         val parts = expr.children.map { part ->
@@ -267,22 +322,5 @@ class Transformer(val ctx: Context = Context()) {
 }
 
 class TransformException(override val message: String = "Transformation error") : Exception(message) {
-
-}
-
-fun bar(x: Int) = foo(x)
-
-fun foo(x: Int) {
-    val ystr =  "1212"
-    val yint = 456u
-    val ybool = true
-    var y = if (x < 3) {
-        x * 2
-    } else { 2 }
-
-
-    {
-        y += 2
-    }
 
 }

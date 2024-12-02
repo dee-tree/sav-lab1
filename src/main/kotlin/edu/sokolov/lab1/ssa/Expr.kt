@@ -16,7 +16,9 @@ data class BinaryExpr(val left: Expr, val op: String, val right: Expr) : Expr {
     }
 }
 
-data class CallExpr(val base: Expr, val args: List<Expr> = emptyList()) : Expr
+data class NamedArgument<T : Expr>(val name: String, val value: T) : Expr
+
+data class CallExpr(val callee: Expr, val args: List<Expr> = emptyList()) : Expr
 data class MemberCallExpr(val base: Expr, val method: String, val args: List<Expr> = emptyList()) : Expr
 
 sealed class ConstExpr<T>(open val value: T) : Expr {
