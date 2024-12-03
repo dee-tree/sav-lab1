@@ -1,5 +1,8 @@
 package edu.sokolov.lab1.ssa
 
+import java.util.HashMap
+import java.util.HashSet
+
 sealed interface Expr : Node {
     data object Undefined : Expr
 }
@@ -58,21 +61,21 @@ sealed class ConstExpr<T>(open val value: T) : Expr {
     }
 }
 
-class PhiExpr private constructor(
-    private val preds: ArrayList<Definition.Stamp>,
+data class PhiExpr private constructor(
+    private val preds: HashSet<Definition.Stamp>,
     val ofName: String
 ) : Expr {
-    constructor(predecessors: List<Definition.Stamp> = emptyList()) : this(
-        ArrayList(predecessors),
+    constructor(predecessors: Set<Definition.Stamp> = emptySet()) : this(
+        HashSet(predecessors),
         predecessors.firstOrNull()?.definition?.name ?: ""
     )
 
     constructor(vararg predecessors: Definition.Stamp) : this(
-        ArrayList(predecessors.toList()),
+        HashSet(predecessors.toSet()),
         predecessors.firstOrNull()?.definition?.name ?: ""
     )
 
-    val predecessors: List<Definition.Stamp>
+    val predecessors: Set<Definition.Stamp>
         get() = preds
 
     val isComplete: Boolean
@@ -95,8 +98,8 @@ class PhiExpr private constructor(
 
     companion object {
         val Incomplete: PhiExpr
-            get() = PhiExpr(arrayListOf(), "")
+            get() = PhiExpr(hashSetOf(), "")
 
-        fun Incomplete(ofName: String) = PhiExpr(arrayListOf(), ofName)
+        fun Incomplete(ofName: String) = PhiExpr(hashSetOf(), ofName)
     }
 }

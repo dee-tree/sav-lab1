@@ -54,14 +54,94 @@ fun hello() {
 }
 """.trimIndent()*/
 
+// If blocks
+/*val code = """
+fun hello() {
+    val list = listOf(1, 2, 3 + 4, last = 5)
+    if (list.isEmpty()) {
+        val blist = list + 0
+        if (blist != list) println("Different!") else println("Same")
+        
+        val size = if (blist != list) list.size else blist.size
+        System.out.println(size)
+    }
+}
+""".trimIndent()*/
+
+// While loop
+//val code = """
+//fun hello() {
+//    var v = 35 + 1
+//    while (v > 0) {
+//        v--
+//        print(v)
+//    }
+//}
+//""".trimIndent()
+
 // For loop
-val code = """
+//val code = """
+//fun hello() {
+//    val list = listOf(1, 2, 3 + 4, last = 5)
+//    for (i in list) {
+//        println(i)
+//    }
+//}
+//""".trimIndent()
+
+
+// Big code
+/*val code = """
 fun hello() {
     val list = listOf(1, 2, 3 + 4, last = 5)
     for (i in list) {
         println(i)
     }
+    
+
 }
+""".trimIndent()*/
+
+// Statistics
+val code = """
+class A : B(), C(), D() {
+
+    fun aoo() {
+        val x = 35.toString()
+        val y = x.toInt()
+    }
+    
+}
+
+open class B: C() {
+    override open fun doo() {}
+    open fun boo(long: Long) { p2 * p2 }
+    
+    private fun kek() {}
+    
+    val p1 = "striiiing"
+    val p2 = 3333
+}
+
+
+open class C: D() {
+     open fun coo(a: Int, B: Double, c: String) {
+        System.out.println(a)
+     }
+}
+
+open class D {
+    val prop1: Int = 2
+    val prop2: Int = prop1
+    open fun doo() {
+        prop1 + 1
+    }
+    
+    fun dooo() = prop1
+    
+    fun gogo() {}
+}
+
 """.trimIndent()
 
 
@@ -80,13 +160,17 @@ fun main() {
     val ktfile = PsiManager.getInstance(project).findFile(LightVirtualFile("code.kt", code)) as KtFile
 
     val transformer = Transformer()
-    ktfile.declarations.forEach(transformer::transform)
+    val blocks = ktfile.declarations.map(transformer::transform)
 
-    val bb = transformer.transform(ktfile.declarations.first())
+    val bb = blocks.first()
 
     val propagated = constPropagation(bb)
     val phiEliminated = eliminateRedundantPhi(propagated)
     val tmpEliminated = tmpPropagation(transformer.ctx, phiEliminated)
+
+
+    println("Statistics Chidamber & Kemerer")
+    println(transformer.ctx.stats.joinToString("\n"))
 
     File("${diagramFileName}_unoptimized.$diagramFileExt").also { file ->
         bb.toDiagramBuilder().toFile(file)

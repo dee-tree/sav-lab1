@@ -64,7 +64,7 @@ fun Expr.substitute(before: Expr, after: Expr): Expr {
         is PhiExpr -> {
             if (before !in predecessors) return this
             if (after !is Definition.Stamp) return this
-            PhiExpr(predecessors.map { it.substitute(before, after) as Definition.Stamp })
+            PhiExpr(predecessors.map { it.substitute(before, after) as Definition.Stamp }.toSet())
         }
         is ConstExpr<*> -> if (this == before) after else this
         is MemberCallExpr -> {
@@ -91,7 +91,7 @@ fun <A :Expr, B: Expr> Expr.substitute(rule: HashMap<A, B>): Expr {
 }
 
 fun BasicBlock.substituteUsages(rule: HashMap<Expr, Expr>): BasicBlock {
-    val newBB = BasicBlock().also {  predecessors.forEach { pred -> it.addPredecessor(pred) } }
+    val newBB = BasicBlock(name = name).also { predecessors.forEach { pred -> it.addPredecessor(pred) } }
 
     for (child in children) {
         newBB += child.copy(rhs = child.rhs.substitute(rule))
@@ -101,12 +101,12 @@ fun BasicBlock.substituteUsages(rule: HashMap<Expr, Expr>): BasicBlock {
         is BasicBlock.Exit.NoNext -> newBB.exit = BasicBlock.Exit.NoNext
         is BasicBlock.Exit.Ret -> {
             val exit = exit as BasicBlock.Exit.Ret
-            newBB.exit = if (exit.ret in rule) BasicBlock.Exit.Ret(exit.ret.substitute(exit.ret, rule[exit.ret]!!)) else exit
+            newBB.exit = if (exit.ret in rule) BasicBlock.Exit.Ret(exit.ret.substitute(rule)) else exit
         }
         is BasicBlock.Exit.Unconditional -> newBB.exit = BasicBlock.Exit.Unconditional(exit.next!!.substituteUsages(rule))
         is BasicBlock.Exit.Conditional -> {
             val exit = exit as BasicBlock.Exit.Conditional
-            val newCond = rule[exit.cond] ?: exit.cond
+            val newCond = exit.cond.substitute(rule)
             newBB.exit = BasicBlock.Exit.Conditional(newCond, exit.trueBlock.substituteUsages(rule), exit.falseBlock.substituteUsages(rule))
         }
     }

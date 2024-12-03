@@ -12,7 +12,7 @@ fun tmpPropagation(
     bb: BasicBlock,
     rules: HashMap<Definition.Stamp, Expr> = hashMapOf(),
     visitedBlocks: HashMap<BasicBlock, BasicBlock> = hashMapOf(),
-    eliminateDefinitions: Boolean = true
+    eliminateDefinitions: Boolean = false
 ): BasicBlock {
     if (bb in visitedBlocks) return visitedBlocks[bb]!!
     val newBB = BasicBlock(name = bb.name)
@@ -22,7 +22,7 @@ fun tmpPropagation(
     for (asg in bb.children) {
         when {
              with(ctx) { asg.lhs.isTmp } && asg.rhs !is CallExpr && asg.rhs !is MemberCallExpr -> {
-                 rules[asg.lhs] = asg.rhs
+                 rules[asg.lhs] = asg.rhs.substitute(rules)
                 if (!eliminateDefinitions) newBB += asg
             }
 
@@ -35,7 +35,7 @@ fun tmpPropagation(
         is BasicBlock.Exit.Ret -> {
             val exit = bb.exit as BasicBlock.Exit.Ret
             newBB.exit =
-                if (exit.ret in rules) BasicBlock.Exit.Ret(exit.ret.substitute(exit.ret, rules[exit.ret]!!)) else exit
+                if (exit.ret in rules) BasicBlock.Exit.Ret(exit.ret.substitute(rules)) else exit
         }
 
         is BasicBlock.Exit.Unconditional -> newBB.exit =
@@ -43,7 +43,7 @@ fun tmpPropagation(
 
         is BasicBlock.Exit.Conditional -> {
             val exit = bb.exit as BasicBlock.Exit.Conditional
-            val newCond = rules[exit.cond] ?: exit.cond
+            val newCond = exit.cond.substitute(rules)
             newBB.exit = BasicBlock.Exit.Conditional(
                 newCond,
                 tmpPropagation(ctx, exit.trueBlock, rules, visitedBlocks),

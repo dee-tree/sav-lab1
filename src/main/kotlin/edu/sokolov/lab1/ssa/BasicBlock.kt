@@ -1,5 +1,6 @@
 package edu.sokolov.lab1.ssa
 
+import java.util.HashSet
 import java.util.Objects
 
 class BasicBlock(next: Exit = Exit.NoNext, val name: String? = null) : Statement {
@@ -37,23 +38,43 @@ class BasicBlock(next: Exit = Exit.NoNext, val name: String? = null) : Statement
     }
 
     override fun hashCode(): Int {
+        return hashCode(hashSetOf())
+//        return Objects.hash(exitHash(), *childs.toTypedArray())
+    }
+
+    private fun localHash(): Int {
         return Objects.hash(exitHash(), *childs.toTypedArray())
+    }
+
+    private fun hashCode(visited: HashSet<Int>): Int {
+        if (localHash() in visited) return localHash()
+        visited += localHash()
+        val addHash = when(val exit = exit) {
+            is Exit.NoNext -> Unit
+            is Exit.Ret -> Unit
+            is Exit.Unconditional -> visited += exit.next.hashCode(visited)
+            is Exit.Conditional -> {
+                visited += exit.trueBlock.hashCode(visited)
+                visited += exit.falseBlock.hashCode(visited)
+            }
+        }
+        return Objects.hash(exitHash(), *childs.toTypedArray(), addHash)
     }
 
     private fun exitHash() = when (exit) {
         is Exit.NoNext -> 10
         is Exit.Unconditional -> 100
         is Exit.Conditional -> 1_000
-        is Exit.Ret -> 10_000
+        is Exit.Ret -> (exit as Exit.Ret).ret.hashCode()
     }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
         other as BasicBlock
-        if (exitHash() != other.exitHash()) return false
         if (childs.size != other.childs.size) return false
-        return childs.zip(other.childs).all { (c1, c2) -> c1 == c2 }
+        if (childs.zip(other.childs).any { (c1, c2) -> c1 != c2 }) return false
+        return hashCode() == other.hashCode()
     }
 
     sealed class Exit(open val cond: Expr?, open val next: BasicBlock?) {

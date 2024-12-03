@@ -3,6 +3,7 @@ package edu.sokolov.lab1.diagram
 import edu.sokolov.lab1.ssa.BasicBlock
 
 private const val NEW_LINE = "<br>"
+private const val DOUBLE_QUOTE = "#quot;"
 
 private var bbcounter = 0
 
@@ -11,7 +12,11 @@ fun BasicBlock.toDiagramBuilder(visited: HashMap<BasicBlock, DNode> = hashMapOf(
     if (this in visited) return builder
     val id = "$name\$${bbcounter++}"
 
-    val node = DNode(content = if (children.isEmpty()) "exit" else nodesToString(), id = id)
+    val nodeContent = when {
+        children.isEmpty() -> if (exit is BasicBlock.Exit.NoNext) "exit" else " "
+        else -> nodesToString()
+    }
+    val node = DNode(content = nodeContent, id = id)
     visited[this] = node
     builder.node { node }
 
@@ -43,3 +48,5 @@ private fun BasicBlock.nodesToString(): String {
     }
     return builder.toString()
 }
+
+fun String.escape() = this.replace("\n", NEW_LINE).replace("\"", DOUBLE_QUOTE)

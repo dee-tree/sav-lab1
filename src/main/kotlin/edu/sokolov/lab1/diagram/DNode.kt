@@ -4,5 +4,5 @@ data class DNode(val content: String, val id: String, val kind: NodeShape = Node
     override fun toString(): String = "$id${kind.lbrace}$safeContent${kind.rbrace}"
 
     private val safeContent: String
-        get() = "\"${content.replace("\"", "\\\"")}\""
+        get() = "\"${content.escape()}\""
 }

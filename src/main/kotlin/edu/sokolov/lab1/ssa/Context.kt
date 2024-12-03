@@ -1,9 +1,11 @@
 package edu.sokolov.lab1.ssa
 
+import edu.sokolov.lab1.stat.Stats
+
 /**
  * @param isStrict - should ban unknown identifiers or add it in globals
  */
-class Context(val isStrict: Boolean = false) {
+class Context(val isStrict: Boolean = false, val stats: HashSet<Stats> = hashSetOf()) {
     private val globals = hashMapOf<String, Definition>()
 
     private val definitions = arrayListOf(hashMapOf<String, Definition>())
@@ -19,7 +21,7 @@ class Context(val isStrict: Boolean = false) {
 
     fun pop() {
         scope--
-        definitions.removeLast()
+//        definitions.removeLast()
     }
 
     fun resolve(id: String, bb: BasicBlock): Definition.Stamp {
@@ -38,7 +40,7 @@ class Context(val isStrict: Boolean = false) {
 
     fun merge(id: String, bb: BasicBlock): PhiExpr {
         for (assignment in bb.children.asReversed()) {
-            if (assignment.lhs.definition.name == id) return PhiExpr(listOf(assignment.lhs))
+            if (assignment.lhs.definition.name == id) return PhiExpr(setOf(assignment.lhs))
         }
         val phi = PhiExpr()
         for (predBB in bb.predecessors) {
@@ -47,20 +49,22 @@ class Context(val isStrict: Boolean = false) {
         return phi
     }
 
-    fun definitions(bb: BasicBlock): List<Definition.Stamp> {
+    fun definitions(bb: BasicBlock, withLast: Boolean = true): List<Definition.Stamp> {
         val known = hashSetOf<String>()
         val result = arrayListOf<Definition.Stamp>()
+        var isLast = true
         for (child in bb.children.asReversed()) {
-            if (!child.lhs.isTmp && child.lhs.definition.name !in known) {
+            if (!child.lhs.isTmp && child.lhs.definition.name !in known || isLast && withLast) {
                 known += child.lhs.definition.name
                 result += child.lhs
             }
+            isLast = false
         }
         return result
     }
 
-    fun mergedDefinitions(bb1: BasicBlock, bb2: BasicBlock): List<PhiExpr> {
-        return merge(definitions(bb1), definitions(bb2))
+    fun mergedDefinitions(bb1: BasicBlock, bb2: BasicBlock, withLast: Boolean = true): List<PhiExpr> {
+        return merge(definitions(bb1, withLast = withLast), definitions(bb2, withLast = withLast))
     }
 
 

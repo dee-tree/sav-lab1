@@ -5,13 +5,13 @@ data class Definition(val name: String) {
 
     fun new() = Stamp(freshId++, this)
 
-    open class Stamp(val id: Long, val definition: Definition): Expr {
+    /*open*/ data class Stamp(val id: Long, val definition: Definition): Expr {
         override fun toString(): String {
             return "${definition.name}\$$id"
         }
     }
 
-    class Incomplete(definition: Definition) : Stamp(0L, definition) {
-        override fun toString(): String { return "Incomplete($definition)" }
-    }
+//    class Incomplete(definition: Definition) : Stamp(0L, definition) {
+//        override fun toString(): String { return "Incomplete($definition)" }
+//    }
 }
