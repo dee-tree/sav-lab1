@@ -1,6 +1,5 @@
 package edu.sokolov.lab1.ssa
 
-import java.util.HashSet
 import java.util.Objects
 
 class BasicBlock(next: Exit = Exit.NoNext, val name: String? = null) : Statement {
@@ -37,35 +36,39 @@ class BasicBlock(next: Exit = Exit.NoNext, val name: String? = null) : Statement
         return "BasicBlock(${name ?: ""} with ${childs.size} nodes)"
     }
 
+    private var visitedMarker = false
+
+    private fun resetMarker() {
+        if (!visitedMarker) return
+        visitedMarker = false
+        when (val exit = exit) {
+            is Exit.NoNext -> Unit
+            is Exit.Ret -> Unit
+            is Exit.Unconditional -> exit.next.resetMarker()
+            is Exit.Conditional -> exit.trueBlock.resetMarker().also { exit.falseBlock.resetMarker() }
+        }
+    }
+
     override fun hashCode(): Int {
-        return hashCode(hashSetOf())
-//        return Objects.hash(exitHash(), *childs.toTypedArray())
+        return hashCode(hashMapOf()).also { resetMarker() }
     }
 
     private fun localHash(): Int {
-        return Objects.hash(exitHash(), *childs.toTypedArray())
+        return Objects.hash(*childs.toTypedArray())
     }
 
-    private fun hashCode(visited: HashSet<Int>): Int {
-        if (localHash() in visited) return localHash()
-        visited += localHash()
-        val addHash = when(val exit = exit) {
-            is Exit.NoNext -> Unit
-            is Exit.Ret -> Unit
-            is Exit.Unconditional -> visited += exit.next.hashCode(visited)
-            is Exit.Conditional -> {
-                visited += exit.trueBlock.hashCode(visited)
-                visited += exit.falseBlock.hashCode(visited)
-            }
-        }
-        return Objects.hash(exitHash(), *childs.toTypedArray(), addHash)
+    private fun hashCode(visited: HashMap<BasicBlock, Int>): Int {
+        if (visitedMarker) return localHash()
+        visitedMarker = true
+        val hash = Objects.hash(localHash(), exitHash(visited))
+        return hash
     }
 
-    private fun exitHash() = when (exit) {
-        is Exit.NoNext -> 10
-        is Exit.Unconditional -> 100
-        is Exit.Conditional -> 1_000
-        is Exit.Ret -> (exit as Exit.Ret).ret.hashCode()
+    private fun exitHash(visited: HashMap<BasicBlock, Int> = hashMapOf()) = when (val exit = exit) {
+        is Exit.NoNext -> exit.hashCode()
+        is Exit.Unconditional -> exit.next.hashCode(visited)
+        is Exit.Conditional -> Objects.hash(exit.trueBlock.hashCode(visited), exit.falseBlock.hashCode(visited), exit.cond.hashCode())
+        is Exit.Ret -> exit.ret.hashCode()
     }
 
     override fun equals(other: Any?): Boolean {

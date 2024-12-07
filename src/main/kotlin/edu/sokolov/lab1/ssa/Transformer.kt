@@ -141,7 +141,7 @@ class Transformer(val ctx: Context = Context()) {
             }
             nextBB += Assignment(ctx.tmp(), MemberCallExpr(base = resolvedBase, method = call.calleeExpression!!.text, args = args))
         } else {
-            nextBB += Assignment(ctx.tmp(), ctx.resolve("${resolvedBase.definition.name}.${expr.selectorExpression!!.text}", bb))
+            nextBB += Assignment(ctx.tmp(), ctx.resolve("${resolvedBase}.${expr.selectorExpression!!.text}", bb))
         }
 
         return nextBB
@@ -277,7 +277,11 @@ class Transformer(val ctx: Context = Context()) {
 
         val _loopVarsBefore = condBeforeBlock.children.drop(condBeforeStart).toSet()
         val loopVarsBefore = _loopVarsBefore.mapIndexed { i, v ->
-            val def = if (with(ctx) { v.lhs.isTmp }) { if (with(ctx) { (v.rhs as? Definition.Stamp)?.isTmp == false}) (v.rhs as Definition.Stamp).definition.new() else ctx.fresh("ploop${loopIdx}-$i").also { condBeforeBlock += Assignment(it, v.rhs) } } else v.lhs.definition.new()
+            val def = if (with(ctx) { v.lhs.isTmp }) {
+                if (with(ctx) { (v.rhs as? Definition.Stamp)?.isTmp == false})
+                    (v.rhs as Definition.Stamp)
+                else ctx.fresh("ploop${loopIdx}-$i").also { condBeforeBlock += Assignment(it, v.rhs) }
+            } else v.lhs.definition.new()
             def
         }
         loopIdx++
@@ -314,8 +318,8 @@ class Transformer(val ctx: Context = Context()) {
 
         val loopExit = BasicBlock(name = "while_exit")
 
-        loopVarsBefore.zip(loopVarsAtStart).forEach { (a, b) ->
-            loopExit += Assignment(a.definition.new(), PhiExpr(a, b))
+        loopVarsAtStart.forEach { a ->
+            loopExit += Assignment(a.definition.new(), PhiExpr(a))
         }
 
         loopStart.exit = BasicBlock.Exit.Conditional(cond, loopBody, loopExit)

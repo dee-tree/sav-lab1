@@ -22,7 +22,7 @@ fun BasicBlock.toDiagramBuilder(visited: HashMap<BasicBlock, DNode> = hashMapOf(
 
     when (val exit = exit) {
         is BasicBlock.Exit.NoNext -> Unit
-        is BasicBlock.Exit.Ret -> builder.node { DNode(content = "return ${exit.ret}", id = "ret\$${bbcounter++}") }
+        is BasicBlock.Exit.Ret -> builder.node { DNode(content = "return ${exit.ret}", id = "ret\$${bbcounter++}").also { builder.edge { DEdge(node, it) } } }
         is BasicBlock.Exit.Unconditional -> exit.next.toDiagramBuilder(visited, builder).also { builder.edge { DEdge(node, visited[exit.next]!!) } }
         is BasicBlock.Exit.Conditional -> {
             val cond = DNode(content = exit.cond.toString(), id = "cond\$${bbcounter++}", kind = NodeShape.Diamond)

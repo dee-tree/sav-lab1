@@ -16,9 +16,7 @@ fun constPropagation(
     val consts = hashMapOf<Definition.Stamp, ConstExpr<*>>().apply { putAll(rules) }
     visitedBlocks[bb] = newBB
 
-    for (instrIdx in bb.children.indices) {
-        val assignment = bb.children[instrIdx]
-
+    for (assignment in bb.children) {
         when {
             assignment.rhs is ConstExpr<*> -> {
                 consts[assignment.lhs] = assignment.rhs
@@ -34,24 +32,18 @@ fun constPropagation(
         }
     }
 
-    when (bb.exit) {
+    when (val exit = bb.exit) {
         is BasicBlock.Exit.NoNext -> newBB.exit = BasicBlock.Exit.NoNext
-        is BasicBlock.Exit.Ret -> {
-            val exit = bb.exit as BasicBlock.Exit.Ret
-            newBB.exit =
-                if (exit.ret in consts) BasicBlock.Exit.Ret(exit.ret.substitute(exit.ret, consts[exit.ret]!!)) else exit
-        }
-
+        is BasicBlock.Exit.Ret -> newBB.exit = BasicBlock.Exit.Ret(exit.ret.substitute(consts))
         is BasicBlock.Exit.Unconditional -> newBB.exit =
-            BasicBlock.Exit.Unconditional(constPropagation(bb.exit.next!!, consts, visitedBlocks))
+            BasicBlock.Exit.Unconditional(constPropagation(bb.exit.next!!, consts, visitedBlocks, eliminateDefinitions = eliminateDefinitions))
 
         is BasicBlock.Exit.Conditional -> {
-            val exit = bb.exit as BasicBlock.Exit.Conditional
-            val newCond = consts[exit.cond] ?: exit.cond
+            val newCond = exit.cond.substitute(consts)
             newBB.exit = BasicBlock.Exit.Conditional(
                 newCond,
-                constPropagation(exit.trueBlock, consts, visitedBlocks),
-                constPropagation(exit.falseBlock, consts, visitedBlocks)
+                constPropagation(exit.trueBlock, consts, visitedBlocks, eliminateDefinitions = eliminateDefinitions),
+                constPropagation(exit.falseBlock, consts, visitedBlocks, eliminateDefinitions = eliminateDefinitions)
             )
         }
     }
