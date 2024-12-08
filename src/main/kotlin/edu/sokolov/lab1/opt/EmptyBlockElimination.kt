@@ -16,7 +16,9 @@ fun eliminateEmptyBlocks(
     if (bb.exit is BasicBlock.Exit.Unconditional && bb.exit.next!!.children.isEmpty()) {
         if (eliminateExit || bb.exit.next!!.exit !is BasicBlock.Exit.NoNext) {
             newBB.exit = bb.exit.next!!.exit
-            return eliminateEmptyBlocks(newBB)
+//            return eliminateEmptyBlocks(newBB)
+            eliminateEmptyBlocks(newBB)
+            return newBB
         }
     }
 

@@ -67,6 +67,10 @@ class Context(val isStrict: Boolean = false, val stats: HashSet<Stats> = hashSet
         return merge(definitions(bb1, withLast = withLast), definitions(bb2, withLast = withLast))
     }
 
+    fun mergedDefinitions(bb1: BasicBlock, bb2: BasicBlock, withLast1: Boolean, withLast2: Boolean): List<PhiExpr> {
+        return merge(definitions(bb1, withLast = withLast1), definitions(bb2, withLast = withLast2))
+    }
+
 
     private fun String.def(): Definition? {
         for (defs in definitions.asReversed()) {

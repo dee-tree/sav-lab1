@@ -69,25 +69,25 @@ import java.io.File
 //""".trimIndent()
 
 // While loop
-val code = """
-fun hello() {
-    var v = 35 + 1
-    while (v > 0) {
-        v--
-        print(v)
-    }
-}
-""".trimIndent()
+//val code = """
+//fun hello() {
+//    var v = 35 + 1
+//    while (v > 0) {
+//        v--
+//        print(v)
+//    }
+//}
+//""".trimIndent()
 
 // For loop
-/*val code = """
-fun hello() {
-    val list = listOf(1, 2, 3 + 4, last = 5)
-    for (i in list) {
-        println(i)
-    }
-}
-""".trimIndent()*/
+//val code = """
+//fun hello() {
+//    val list = listOf(1, 2, 3 + 4, last = 5)
+//    for (i in list) {
+//        println(i)
+//    }
+//}
+//""".trimIndent()
 
 
 // Big code
@@ -146,16 +146,28 @@ fun hello() {
 
 
 fun main() {
+    val case =
+//        "while-loop"
+//        "while-break-loop"
+//        "while-continue-loop"
+        "while-complex-loop"
+
+    val codeFileName = "code.kt"
+
     val diagramFileName = "ssa-diagram"
     val diagramFileExt = "mmd"
 
     println("Hello")
 
+    val caseFolder = File("res/${case}")
     val project = KotlinCoreEnvironment.createForProduction(
         Disposer.newDisposable(),
         CompilerConfiguration(),
         EnvironmentConfigFiles.JVM_CONFIG_FILES
     ).project
+
+    val codeFile = File(caseFolder, codeFileName)
+    val code = codeFile.readText()
 
     val ktfile = PsiManager.getInstance(project).findFile(LightVirtualFile("code.kt", code)) as KtFile
 
@@ -167,29 +179,29 @@ fun main() {
     val phiEliminated = eliminatePhis(bb)
     val inlined = inlineDefinitions(transformer.ctx, phiEliminated)
     val propagated = constPropagation(inlined, eliminateDefinitions = false)
-    val withoutEmptyBlocks = eliminateEmptyBlocks(propagated)
+//    val withoutEmptyBlocks = eliminateEmptyBlocks(propagated)
 
     println("Statistics Chidamber & Kemerer")
     println(transformer.ctx.stats.joinToString("\n"))
 
-    File("${diagramFileName}_unoptimized.$diagramFileExt").also { file ->
+    File(caseFolder, "${diagramFileName}_unoptimized.$diagramFileExt").also { file ->
         bb.toDiagramBuilder().toFile(file)
     }
 
-    File("${diagramFileName}_const-prop.$diagramFileExt").also { file ->
+    File(caseFolder, "${diagramFileName}_const-prop.$diagramFileExt").also { file ->
         propagated.toDiagramBuilder().toFile(file)
     }
 
-    File("${diagramFileName}_phi-elim.$diagramFileExt").also { file ->
+    File(caseFolder, "${diagramFileName}_phi-elim.$diagramFileExt").also { file ->
         phiEliminated.toDiagramBuilder().toFile(file)
     }
 
-    File("${diagramFileName}_inlined.$diagramFileExt").also { file ->
+    File(caseFolder, "${diagramFileName}_inlined.$diagramFileExt").also { file ->
         inlined.toDiagramBuilder().toFile(file)
     }
 
-    File("${diagramFileName}.$diagramFileExt").also { file ->
-        withoutEmptyBlocks.toDiagramBuilder().toFile(file)
-    }
+//    File(caseFolder, "${diagramFileName}.$diagramFileExt").also { file ->
+//        withoutEmptyBlocks.toDiagramBuilder().toFile(file)
+//    }
 
 }

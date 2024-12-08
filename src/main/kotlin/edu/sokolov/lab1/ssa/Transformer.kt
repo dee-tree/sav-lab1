@@ -7,9 +7,11 @@ import org.jetbrains.kotlin.psi.Call
 import org.jetbrains.kotlin.psi.KtBinaryExpression
 import org.jetbrains.kotlin.psi.KtBlockExpression
 import org.jetbrains.kotlin.psi.KtBlockStringTemplateEntry
+import org.jetbrains.kotlin.psi.KtBreakExpression
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtConstantExpression
+import org.jetbrains.kotlin.psi.KtContinueExpression
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtDoWhileExpression
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
@@ -56,6 +58,8 @@ class Transformer(val ctx: Context = Context()) {
             is KtIfExpression -> transformIf(expr, bb)
             is KtForExpression -> transformForLoop(expr, bb)
             is KtWhileExpression -> transformWhileLoop(expr, bb)
+            is KtBreakExpression -> transformBreakExpr(expr, bb)
+            is KtContinueExpression -> transformContinueExpr(expr, bb)
             is KtCallExpression -> transformCallExpr(expr, bb)
             is KtBinaryExpression -> transformBinaryExpr(expr, bb)
             is KtPrefixExpression -> transformPrefixExpr(expr, bb)
@@ -83,6 +87,7 @@ class Transformer(val ctx: Context = Context()) {
 
         transformExpr(expr.then!!, trueBranch).also { it.exit = BasicBlock.Exit.Unconditional(merged) }
 //        trueBranch += Assignment(ctx.fresh("if_res"), trueBranch.children.last().lhs)
+        val hasFalseBranch = expr.`else` != null
         val falseBranch = expr.`else`?.let { elseExpr ->
             val b = BasicBlock(name = "if_false")
 
@@ -106,7 +111,11 @@ class Transformer(val ctx: Context = Context()) {
             it.exit = BasicBlock.Exit.Conditional(it.children.last().lhs, trueBranch, falseBranch)
         }
 
-        ctx.mergedDefinitions(trueBranch, falseBranch).forEachIndexed { i, def ->
+        val mergedDefs = if (hasFalseBranch) ctx.mergedDefinitions(trueBranch, falseBranch) else ctx.mergedDefinitions(trueBranch, falseBranch,
+            withLast1 = false,
+            withLast2 = true
+        )
+        mergedDefs.forEachIndexed { i, def ->
             val stamp = ctx.fresh(def.ofName)
             merged += Assignment(stamp, def)
 //            if (i == 0) merged += Assignment(ctx.fresh("if_res"), stamp)
@@ -271,7 +280,7 @@ class Transformer(val ctx: Context = Context()) {
         private var loopIdx = 0
     }
 
-    fun transformWhileLoop(expr: KtWhileExpression, bb: BasicBlock): BasicBlock {
+    private fun transformWhileLoop(expr: KtWhileExpression, bb: BasicBlock): BasicBlock {
         val condBeforeStart = bb.children.size
         val condBeforeBlock = transformExpr(expr.condition!!, bb)
 
@@ -325,7 +334,64 @@ class Transformer(val ctx: Context = Context()) {
         loopStart.exit = BasicBlock.Exit.Conditional(cond, loopBody, loopExit)
         loopExit.addPredecessor(loopStart)
 
+        resolveLoopFlowExpr(loopBody, loopStart, loopExit, startPhis)
+
        return loopExit
+    }
+
+    private fun resolveLoopFlowExpr(body: BasicBlock, loopStart: BasicBlock, loopExit: BasicBlock, startPhis: List<Assignment>, visited: HashSet<BasicBlock> = hashSetOf()) {
+        if (body == loopStart || body in visited) return
+        visited += body
+
+        for (asg in body.children) {
+            when (asg.rhs) {
+                is BreakExpr -> {
+                    when (val exit = body.exit) {
+                        is BasicBlock.Exit.Unconditional -> exit.next.removePredecessor(body)
+                        is BasicBlock.Exit.Conditional -> exit.trueBlock.removePredecessor(body).also { exit.falseBlock.removePredecessor(body) }
+                        else -> Unit
+                    }
+                    body.exit = BasicBlock.Exit.Unconditional(loopExit)
+                    loopExit.addPredecessor(body)
+                    body -= asg
+
+                    return
+                }
+                is ContinueExpr -> {
+                    when (val exit = body.exit) {
+                        is BasicBlock.Exit.Unconditional -> exit.next.removePredecessor(body)
+                        is BasicBlock.Exit.Conditional -> exit.trueBlock.removePredecessor(body).also { exit.falseBlock.removePredecessor(body) }
+                        else -> Unit
+                    }
+                    body.exit = BasicBlock.Exit.Unconditional(loopStart)
+                    loopStart.addPredecessor(body)
+                    ctx.definitions(body, false).forEach { bdef ->
+                        startPhis.find { bdef.definition == it.lhs.definition }?.also { (it.rhs as PhiExpr) += bdef }
+                    }
+                    body -= asg
+                    return
+                }
+                else -> Unit
+            }
+        }
+
+        when (val exit = body.exit) {
+            is BasicBlock.Exit.Unconditional -> resolveLoopFlowExpr(exit.next, loopStart, loopExit, startPhis, visited)
+            is BasicBlock.Exit.Conditional -> resolveLoopFlowExpr(exit.trueBlock, loopStart, loopExit, startPhis, visited).also {
+                resolveLoopFlowExpr(exit.falseBlock, loopStart, loopExit, startPhis, visited)
+            }
+            else -> Unit
+        }
+    }
+
+    private fun transformBreakExpr(expr: KtBreakExpression, bb: BasicBlock): BasicBlock {
+        bb += Assignment(ctx.tmp(), BreakExpr(expr.getLabelName()))
+        return bb
+    }
+
+    private fun transformContinueExpr(expr: KtContinueExpression, bb: BasicBlock): BasicBlock {
+        bb += Assignment(ctx.tmp(), ContinueExpr(expr.getLabelName()))
+        return bb
     }
 
     private fun transformCallExpr(expr: KtCallExpression, bb: BasicBlock): BasicBlock {
@@ -345,7 +411,6 @@ class Transformer(val ctx: Context = Context()) {
     }
 
     private fun transformClassDecl(decl: KtClass) {
-        println("in class decl: ${decl.fqName}")
         ctx.stats += decl.collectStats()
     }
 

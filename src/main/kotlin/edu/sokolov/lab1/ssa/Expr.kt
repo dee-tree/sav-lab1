@@ -13,6 +13,14 @@ data class BinaryExpr(val left: Expr, val op: String, val right: Expr) : Expr {
     }
 }
 
+data class BreakExpr(val label: String? = null) : Expr {
+
+}
+
+data class ContinueExpr(val label: String? = null): Expr {
+
+}
+
 data class NamedArgument<T : Expr>(val name: String, val value: T) : Expr {
     override fun toString(): String = "$name=$value"
 }
@@ -90,6 +98,10 @@ data class PhiExpr private constructor(
 
     operator fun plusAssign(other: PhiExpr) {
         preds += other.preds
+    }
+
+    operator fun minusAssign(predecessor: Definition.Stamp) {
+        preds -= predecessor
     }
 
     override fun toString(): String {

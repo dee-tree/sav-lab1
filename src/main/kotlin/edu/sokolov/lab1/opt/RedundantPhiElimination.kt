@@ -31,7 +31,7 @@ fun eliminateRedundantPhi(
             if (rhs is PhiExpr && rhs.predecessors.size == 1) {
                 continue
             } else {
-                newBB += asg.copy(rhs = rhs)
+                newBB += asg.copy(rhs = rhs.also { (it as? PhiExpr)?.let { it -= asg.lhs } })
             }
 
         }

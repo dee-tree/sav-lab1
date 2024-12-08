@@ -24,9 +24,18 @@ class BasicBlock(next: Exit = Exit.NoNext, val name: String? = null) : Statement
         preds += pred
     }
 
+    fun removePredecessor(pred: BasicBlock) {
+        preds -= pred
+    }
+
     operator fun plusAssign(child: Assignment) {
         childs.add(child)
     }
+
+    operator fun minusAssign(child: Assignment) {
+        childs.remove(child)
+    }
+
 
     fun insert(pos: Int, node: Assignment) {
         childs.add(pos, node)

@@ -2,8 +2,10 @@ package edu.sokolov.lab1.opt
 
 import edu.sokolov.lab1.ssa.BasicBlock
 import edu.sokolov.lab1.ssa.BinaryExpr
+import edu.sokolov.lab1.ssa.BreakExpr
 import edu.sokolov.lab1.ssa.CallExpr
 import edu.sokolov.lab1.ssa.ConstExpr
+import edu.sokolov.lab1.ssa.ContinueExpr
 import edu.sokolov.lab1.ssa.Definition
 import edu.sokolov.lab1.ssa.Expr
 import edu.sokolov.lab1.ssa.MemberCallExpr
@@ -43,6 +45,8 @@ operator fun Expr.contains(what: Definition.Stamp): Boolean {
         is CallExpr -> what in callee || args.any { what in it }
         is Expr.Undefined -> false
         is NamedArgument<*> -> what in value
+        is BreakExpr -> false
+        is ContinueExpr -> false
     }
 }
 
@@ -79,6 +83,8 @@ fun Expr.substitute(before: Expr, after: Expr): Expr {
         }
         is Expr.Undefined -> this
         is NamedArgument<*> -> NamedArgument(name = name, value = value.substitute(before, after))
+        is BreakExpr -> if (this == before) after else this
+        is ContinueExpr -> if (this == before) after else this
     }
 }
 

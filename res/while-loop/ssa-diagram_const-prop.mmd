@@ -1,0 +1,11 @@
+flowchart TD
+	while_start$6("v$1 = φ(v$3, v$0)<br>ploop0-1$1 = φ(ploop0-1$1, ploop0-1$0)<br>ploop0-2$1 = φ(ploop0-2$1, ploop0-2$0)")
+	while_exit$9("exit")
+	while_body$8("v$3 = (v$1 - 1)<br>__tmp$6 = v$1<br>__tmp$10 = print$0(v$3)")
+	cond$7{"ploop0-2$1"}
+	entry$5("v$0 = (35 + 1)<br>__tmp$3 = v$0<br>__tmp$4 = 0<br>__tmp$5 = (__tmp$3 > 0)<br>ploop0-1$0 = 0<br>ploop0-2$0 = (__tmp$3 > 0)")
+	cond$7 --> |"true"| while_body$8
+	while_body$8 -->  while_start$6
+	cond$7 --> |"false"| while_exit$9
+	entry$5 -->  while_start$6
+	while_start$6 -->  cond$7
