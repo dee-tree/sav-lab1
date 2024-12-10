@@ -2,12 +2,19 @@ package edu.sokolov.lab1.diagram
 
 import java.io.File
 
-class DiagramBuilder(val name: String = "Diagram") {
+class DiagramBuilder(val name: String = "Diagram", val alignment: String = "left", var title: String? = null) {
 //    private val diagramKind = "graph TD"
     private val diagramKind = "flowchart TD"
 
     private val nodes = hashSetOf<DNode>()
     private val edges = hashSetOf<DEdge>()
+
+    private val styleName = "defstyle"
+
+    fun title(title: String): DiagramBuilder {
+        this.title = title
+        return this
+    }
 
     fun edge(edge: () -> DEdge) {
         val e = edge()
@@ -28,9 +35,19 @@ class DiagramBuilder(val name: String = "Diagram") {
     override fun toString(): String {
         val builder = StringBuilder()
 //        builder.appendLine("$diagramKind $name")
-        builder.appendLine("$diagramKind")
-        nodes.forEach { n -> builder.append('\t'); builder.appendLine(n) }
+
+        title?.let {
+            builder.appendLine("---")
+            builder.appendLine("title: $it")
+            builder.appendLine("---")
+        }
+
+        builder.appendLine(diagramKind)
+        nodes.forEach { n -> builder.append('\t'); builder.appendLine("$n:::$styleName") }
         edges.forEach { e -> builder.append('\t'); builder.appendLine(e) }
+        builder.appendLine("classDef $styleName text-align: $alignment;")
         return builder.toString()
+
+
     }
 }
