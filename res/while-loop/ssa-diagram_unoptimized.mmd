@@ -1,11 +1,17 @@
+---
+title: while-loop
+---
 flowchart TD
-	while_start$1("v$1 = φ(v$3, v$0)<br>ploop0-1$1 = φ(ploop0-1$2, ploop0-1$0)<br>ploop0-2$1 = φ(ploop0-2$2, ploop0-2$0)")
-	cond$2{"ploop0-2$1"}
-	entry$0("__tmp$0 = 35<br>__tmp$1 = 1<br>__tmp$2 = (__tmp$0 + __tmp$1)<br>v$0 = __tmp$2<br>__tmp$3 = v$0<br>__tmp$4 = 0<br>__tmp$5 = (__tmp$3 > __tmp$4)<br>ploop0-1$0 = 0<br>ploop0-2$0 = (__tmp$3 > __tmp$4)")
-	while_body$3("ploop0-2$2 = φ(ploop0-2$1)<br>ploop0-1$2 = φ(ploop0-1$1)<br>v$2 = φ(v$1)<br>__tmp$7 = 1<br>v$3 = (v$2 - __tmp$7)<br>__tmp$6 = v$2<br>__tmp$8 = v$3<br>__tmp$9 = print$0<br>__tmp$10 = __tmp$9(__tmp$8)")
-	while_exit$4("v$4 = φ(v$1)<br>ploop0-1$3 = φ(ploop0-1$1)<br>ploop0-2$3 = φ(ploop0-2$1)")
+	while_start$1("v$1 = φ(v$4, v$0)<br>ploop1-1$1 = φ(ploop1-1$4, ploop1-1$0)<br>ploop1-2$1 = φ(ploop1-2$4, ploop1-2$0)"):::defstyle
+	while_body$3("ploop1-2$2 = φ(ploop1-2$1)<br>ploop1-1$2 = φ(ploop1-1$1)<br>v$2 = φ(v$1)<br>__tmp$7 = 1<br>v$3 = (v$2 - __tmp$7)<br>__tmp$6 = v$2<br>__tmp$8 = v$3<br>__tmp$9 = print$0<br>__tmp$10 = __tmp$9(__tmp$8)"):::defstyle
+	null$4("__tmp$11 = φ(__tmp$10)<br>v$4 = φ(v$3)<br>ploop1-1$3 = φ(ploop1-1$2)<br>ploop1-2$3 = φ(ploop1-2$2)<br>__tmp$12 = v$4<br>__tmp$13 = 0<br>__tmp$14 = (__tmp$12 > __tmp$13)<br>ploop1-1$4 = 0<br>ploop1-2$4 = (__tmp$12 > __tmp$13)"):::defstyle
+	entry$0("__tmp$0 = 35<br>__tmp$1 = 1<br>__tmp$2 = (__tmp$0 + __tmp$1)<br>v$0 = __tmp$2<br>__tmp$3 = v$0<br>__tmp$4 = 0<br>__tmp$5 = (__tmp$3 > __tmp$4)<br>ploop1-1$0 = 0<br>ploop1-2$0 = (__tmp$3 > __tmp$4)"):::defstyle
+	cond$2{"ploop1-2$1"}:::defstyle
+	while_exit$5("v$5 = φ(v$1)<br>ploop1-1$5 = φ(ploop1-1$1)<br>ploop1-2$5 = φ(ploop1-2$1)"):::defstyle
 	while_start$1 -->  cond$2
-	while_body$3 -->  while_start$1
-	cond$2 --> |"false"| while_exit$4
+	while_body$3 -->  null$4
 	entry$0 -->  while_start$1
+	cond$2 --> |"false"| while_exit$5
+	null$4 -->  while_start$1
 	cond$2 --> |"true"| while_body$3
+classDef defstyle text-align: left;

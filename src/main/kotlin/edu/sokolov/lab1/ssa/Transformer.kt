@@ -85,7 +85,10 @@ class Transformer(val ctx: Context = Context()) {
             trueBranch += Assignment(def.definition.new(), PhiExpr(def))
         }
 
-        transformExpr(expr.then!!, trueBranch).also { it.exit = BasicBlock.Exit.Unconditional(merged) }
+        transformExpr(expr.then!!, trueBranch).also {
+            it.exit = BasicBlock.Exit.Unconditional(merged)
+            merged.addPredecessor(trueBranch)
+        }
 //        trueBranch += Assignment(ctx.fresh("if_res"), trueBranch.children.last().lhs)
         val hasFalseBranch = expr.`else` != null
         val falseBranch = expr.`else`?.let { elseExpr ->
@@ -95,7 +98,10 @@ class Transformer(val ctx: Context = Context()) {
                 b += Assignment(def.definition.new(), PhiExpr(def))
             }
 
-            transformExpr(elseExpr, b).also { it.exit = BasicBlock.Exit.Unconditional(merged) }
+            transformExpr(elseExpr, b).also {
+                it.exit = BasicBlock.Exit.Unconditional(merged)
+                merged.addPredecessor(b)
+            }
 //            b += Assignment(ctx.fresh("if_res"), b.children.last().lhs)
             b
         } ?: merged
@@ -107,8 +113,11 @@ class Transformer(val ctx: Context = Context()) {
         }
 
         bb.exit = BasicBlock.Exit.Unconditional(condBlock)
+        condBlock.addPredecessor(bb)
         transformExpr(expr.condition!!, condBlock).also {
             it.exit = BasicBlock.Exit.Conditional(it.children.last().lhs, trueBranch, falseBranch)
+            trueBranch.addPredecessor(it)
+            falseBranch.addPredecessor(it)
         }
 
         val mergedDefs = if (hasFalseBranch) ctx.mergedDefinitions(trueBranch, falseBranch) else ctx.mergedDefinitions(trueBranch, falseBranch,
@@ -281,6 +290,8 @@ class Transformer(val ctx: Context = Context()) {
     }
 
     private fun transformWhileLoop(expr: KtWhileExpression, bb: BasicBlock): BasicBlock {
+        loopIdx++
+        val loopIdx = Transformer.loopIdx
         val condBeforeStart = bb.children.size
         val condBeforeBlock = transformExpr(expr.condition!!, bb)
 
@@ -293,8 +304,6 @@ class Transformer(val ctx: Context = Context()) {
             } else v.lhs.definition.new()
             def
         }
-        loopIdx++
-
         val loopVars = loopVarsBefore.map { it.definition }.toSet()
 
         val loopStart = BasicBlock(name = "while_start")
@@ -315,11 +324,30 @@ class Transformer(val ctx: Context = Context()) {
         loopBody.addPredecessor(loopStart)
         ctx.definitions(loopStart).forEach { def -> loopBody += Assignment(def.definition.new(), PhiExpr(def)) }
 
-        val loopBodyNext = transformExpr(expr.body!!, loopBody)
-        loopBodyNext.exit = BasicBlock.Exit.Unconditional(loopStart)
-        loopStart.addPredecessor(loopBodyNext)
+        val loopBodyNext_ = transformExpr(expr.body!!, loopBody)
+        loopStart.addPredecessor(loopBodyNext_)
+        val loopBodyNextCond = BasicBlock()
+        loopBodyNextCond.addPredecessor(loopBodyNext_)
+        loopBodyNext_.exit = BasicBlock.Exit.Unconditional(loopBodyNextCond)
 
-        val bodyEndVars = loopVars.map { def -> ctx.resolve(def.name, loopBodyNext) }
+        ctx.definitions(loopBodyNext_).forEach { def -> loopBodyNextCond += Assignment(def.definition.new(), PhiExpr(def)) }
+        val condAfterBody = loopBodyNextCond.children.size
+
+        val loopBodyNextCond_ = transformExpr(expr.condition!!, loopBodyNextCond)
+        loopBodyNextCond_.exit = BasicBlock.Exit.Unconditional(loopStart)
+
+        val _loopVarsAfter = loopBodyNextCond_.children.drop(condAfterBody).toSet()
+        val loopVarsAfter = _loopVarsAfter.mapIndexed { i, v ->
+            val def = if (with(ctx) { v.lhs.isTmp }) {
+                if (with(ctx) { (v.rhs as? Definition.Stamp)?.isTmp == false})
+                    (v.rhs as Definition.Stamp)
+                else ctx.fresh("ploop${loopIdx}-$i").also { loopBodyNextCond_ += Assignment(it, v.rhs) }
+            } else v.lhs.definition.new()
+            def
+        }
+
+        val bodyEndVars = loopVars.map { def -> ctx.resolve(def.name, loopBodyNextCond_) }
+
         startPhis.forEach { phi ->
             val endvar = bodyEndVars.find { it.definition == phi.lhs.definition } ?: return@forEach
             (phi.rhs as PhiExpr) += endvar
@@ -334,12 +362,11 @@ class Transformer(val ctx: Context = Context()) {
         loopStart.exit = BasicBlock.Exit.Conditional(cond, loopBody, loopExit)
         loopExit.addPredecessor(loopStart)
 
-        resolveLoopFlowExpr(loopBody, loopStart, loopExit, startPhis)
-
-       return loopExit
+        resolveLoopFlowExpr(loopBody, loopStart, loopBodyNextCond, loopExit, startPhis)
+        return loopExit
     }
 
-    private fun resolveLoopFlowExpr(body: BasicBlock, loopStart: BasicBlock, loopExit: BasicBlock, startPhis: List<Assignment>, visited: HashSet<BasicBlock> = hashSetOf()) {
+    private fun resolveLoopFlowExpr(body: BasicBlock, loopStart: BasicBlock, recomputingCond: BasicBlock, loopExit: BasicBlock, startPhis: List<Assignment>, visited: HashSet<BasicBlock> = hashSetOf()) {
         if (body == loopStart || body in visited) return
         visited += body
 
@@ -363,8 +390,8 @@ class Transformer(val ctx: Context = Context()) {
                         is BasicBlock.Exit.Conditional -> exit.trueBlock.removePredecessor(body).also { exit.falseBlock.removePredecessor(body) }
                         else -> Unit
                     }
-                    body.exit = BasicBlock.Exit.Unconditional(loopStart)
-                    loopStart.addPredecessor(body)
+                    body.exit = BasicBlock.Exit.Unconditional(recomputingCond)
+                    recomputingCond.addPredecessor(body)
                     ctx.definitions(body, false).forEach { bdef ->
                         startPhis.find { bdef.definition == it.lhs.definition }?.also { (it.rhs as PhiExpr) += bdef }
                     }
@@ -376,9 +403,9 @@ class Transformer(val ctx: Context = Context()) {
         }
 
         when (val exit = body.exit) {
-            is BasicBlock.Exit.Unconditional -> resolveLoopFlowExpr(exit.next, loopStart, loopExit, startPhis, visited)
-            is BasicBlock.Exit.Conditional -> resolveLoopFlowExpr(exit.trueBlock, loopStart, loopExit, startPhis, visited).also {
-                resolveLoopFlowExpr(exit.falseBlock, loopStart, loopExit, startPhis, visited)
+            is BasicBlock.Exit.Unconditional -> resolveLoopFlowExpr(exit.next, loopStart, recomputingCond, loopExit, startPhis, visited)
+            is BasicBlock.Exit.Conditional -> resolveLoopFlowExpr(exit.trueBlock, loopStart, recomputingCond, loopExit, startPhis, visited).also {
+                resolveLoopFlowExpr(exit.falseBlock, loopStart, recomputingCond, loopExit, startPhis, visited)
             }
             else -> Unit
         }

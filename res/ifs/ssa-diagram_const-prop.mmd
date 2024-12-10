@@ -1,0 +1,33 @@
+flowchart TD
+	cond$17{"list$0.isEmpty()"}
+	if_true$18("blist$0 = (list$0 + 0)")
+	if_true$25("__tmp$21 = list$6.size$0")
+	cond$20{"(blist$0 != list$0)"}
+	if_merged$22("__tmp$20 = φ(__tmp$16, __tmp$13)")
+	if_merged$26("__tmp$26 = φ(__tmp$21, __tmp$22)<br>__tmp$28 = System.out$0.println(blist$0)")
+	if_true$21("__tmp$13 = println$0(#quot;Different!#quot;)")
+	if_cond$19("_")
+	if_merged$27("exit")
+	if_false$28("__tmp$22 = blist$6.size$0")
+	if_cond$16("_")
+	entry$15("list$0 = listOf$0(1, 2, (3 + 4), last=5)")
+	if_cond$23("_")
+	cond$24{"(blist$0 != list$0)"}
+	if_false$29("__tmp$16 = println$0(#quot;Same#quot;)")
+	cond$24 --> |"false"| if_false$28
+	cond$20 --> |"false"| if_false$29
+	if_cond$23 -->  cond$24
+	entry$15 -->  if_cond$16
+	if_cond$19 -->  cond$20
+	if_merged$22 -->  if_cond$23
+	cond$24 --> |"true"| if_true$25
+	if_merged$26 -->  if_merged$27
+	if_false$29 -->  if_merged$22
+	if_true$18 -->  if_cond$19
+	if_cond$16 -->  cond$17
+	if_false$28 -->  if_merged$26
+	cond$20 --> |"true"| if_true$21
+	cond$17 --> |"true"| if_true$18
+	if_true$21 -->  if_merged$22
+	cond$17 --> |"false"| if_merged$27
+	if_true$25 -->  if_merged$26

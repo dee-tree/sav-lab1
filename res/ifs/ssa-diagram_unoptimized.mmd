@@ -1,0 +1,33 @@
+flowchart TD
+	cond$2{"__tmp$29"}
+	if_cond$1("list$10 = φ(list$0)<br>__tmp$29 = list$10.isEmpty()")
+	cond$5{"__tmp$19"}
+	if_merged$11("__tmp$26 = φ(__tmp$21, __tmp$22)<br>list$9 = φ(list$7, list$6)<br>blist$8 = φ(blist$5, blist$6)<br>size$0 = blist$8<br>__tmp$27 = size$0<br>__tmp$28 = System.out$0.println(__tmp$27)")
+	if_true$3("list$1 = φ(list$0)<br>__tmp$8 = list$1<br>__tmp$9 = 0<br>__tmp$10 = (__tmp$8 + __tmp$9)<br>blist$0 = __tmp$10")
+	if_merged$7("__tmp$20 = φ(__tmp$16, __tmp$13)<br>list$5 = φ(list$3, list$2)<br>blist$4 = φ(blist$1, blist$2)")
+	if_cond$8("blist$7 = φ(blist$4)<br>list$8 = φ(list$5)<br>__tmp$23 = blist$7<br>__tmp$24 = list$8<br>__tmp$25 = (__tmp$23 != __tmp$24)")
+	if_false$14("blist$2 = φ(blist$0)<br>list$3 = φ(list$1)<br>__tmp$14 = #quot;Same#quot;<br>__tmp$15 = println$0<br>__tmp$16 = __tmp$15(__tmp$14)")
+	if_merged$12("blist$9 = φ(blist$0)<br>list$11 = φ(list$1)")
+	if_false$13("blist$6 = φ(blist$4)<br>list$7 = φ(list$5)<br>__tmp$22 = blist$6.size$0")
+	entry$0("__tmp$0 = 1<br>__tmp$1 = 2<br>__tmp$2 = 3<br>__tmp$3 = 4<br>__tmp$4 = (__tmp$2 + __tmp$3)<br>__tmp$5 = 5<br>__tmp$6 = listOf$0<br>__tmp$7 = __tmp$6(__tmp$0, __tmp$1, __tmp$4, last=__tmp$5)<br>list$0 = __tmp$7")
+	if_true$10("blist$5 = φ(blist$4)<br>list$6 = φ(list$5)<br>__tmp$21 = list$6.size$0")
+	if_true$6("blist$1 = φ(blist$0)<br>list$2 = φ(list$1)<br>__tmp$11 = #quot;Different!#quot;<br>__tmp$12 = println$0<br>__tmp$13 = __tmp$12(__tmp$11)")
+	cond$9{"__tmp$25"}
+	if_cond$4("blist$3 = φ(blist$0)<br>list$4 = φ(list$1)<br>__tmp$17 = blist$3<br>__tmp$18 = list$4<br>__tmp$19 = (__tmp$17 != __tmp$18)")
+	cond$2 --> |"true"| if_true$3
+	cond$9 --> |"true"| if_true$10
+	if_false$14 -->  if_merged$7
+	if_merged$11 -->  if_merged$12
+	if_true$6 -->  if_merged$7
+	cond$9 --> |"false"| if_false$13
+	cond$5 --> |"false"| if_false$14
+	cond$2 --> |"false"| if_merged$12
+	if_cond$8 -->  cond$9
+	entry$0 -->  if_cond$1
+	if_true$3 -->  if_cond$4
+	if_cond$4 -->  cond$5
+	if_cond$1 -->  cond$2
+	if_true$10 -->  if_merged$11
+	if_merged$7 -->  if_cond$8
+	if_false$13 -->  if_merged$11
+	cond$5 --> |"true"| if_true$6

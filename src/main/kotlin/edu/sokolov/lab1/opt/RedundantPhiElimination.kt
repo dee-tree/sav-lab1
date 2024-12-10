@@ -4,12 +4,33 @@ import edu.sokolov.lab1.ssa.BasicBlock
 import edu.sokolov.lab1.ssa.Definition
 import edu.sokolov.lab1.ssa.PhiExpr
 
-fun eliminatePhis(bb: BasicBlock): BasicBlock {
-    val rules = hashMapOf<Definition.Stamp, Definition.Stamp>()
-    val visited = hashMapOf<BasicBlock, BasicBlock>()
-    collectReplacements(bb, rules)
+//fun eliminatePhis(bb: BasicBlock): BasicBlock {
+//    val rules = hashMapOf<Definition.Stamp, Definition.Stamp>()
+//
+//    while (true) {
+//        val newRules = hashMapOf<Definition.Stamp, Definition.Stamp>()
+//        newRules += rules
+//        collectReplacements(bb, newRules)
+//        if (newRules == rules) break
+//        rules += newRules
+//    }
+//    println("phi rules: ${rules}")
+//
+//    return eliminateRedundantPhi(bb, rules)
+//}
 
-    return eliminateRedundantPhi(bb, rules, visited)
+fun eliminatePhis(bb: BasicBlock): BasicBlock {
+    var bb = bb
+    while (true) {
+        val rules = hashMapOf<Definition.Stamp, Definition.Stamp>()
+        collectReplacements(bb, rules)
+        println("phi rules: $rules")
+        val newBB = eliminateRedundantPhi(bb, rules)
+        if (bb == newBB) break
+        bb = newBB
+    }
+
+    return bb
 }
 
 
@@ -24,17 +45,28 @@ fun eliminateRedundantPhi(
     visited[bb] = newBB
 
     for (asg in bb.children) {
-        if (asg.rhs is PhiExpr && asg.rhs.predecessors.size == 1) {
-            continue
-        } else {
-            val rhs = asg.rhs.substitute(rules)
-            if (rhs is PhiExpr && rhs.predecessors.size == 1) {
-                continue
-            } else {
-                newBB += asg.copy(rhs = rhs.also { (it as? PhiExpr)?.let { it -= asg.lhs } })
-            }
+        if (asg.lhs in rules) continue
 
+        val rhs = asg.rhs.substitute(rules)
+        if (rhs is PhiExpr) {
+//            rhs -= asg.lhs
+//            if (rhs.predecessors.size == 1) continue
+            newBB += asg.copy(rhs = rhs)
+        } else {
+            newBB += asg.copy(rhs = rhs)
         }
+
+//        if (asg.rhs is PhiExpr && asg.rhs.predecessors.size == 1) {
+//            continue
+//        } else {
+//            val rhs = asg.rhs.substitute(rules)
+//            if (rhs is PhiExpr && rhs.predecessors.size == 1) {
+//                continue
+//            } else {
+//                newBB += asg.copy(rhs = rhs.also { (it as? PhiExpr)?.let { it -= asg.lhs } })
+//            }
+//
+//        }
     }
 
     when (bb.exit) {
@@ -66,7 +98,7 @@ fun eliminateRedundantPhi(
 
 }
 
-fun collectReplacements(
+private fun collectReplacements(
     bb: BasicBlock,
     rules: HashMap<Definition.Stamp, Definition.Stamp> = hashMapOf(),
     visited: HashSet<BasicBlock> = hashSetOf()
@@ -75,16 +107,10 @@ fun collectReplacements(
     visited += bb
 
     for (asg in bb.children) {
-        if (asg.rhs is PhiExpr && asg.rhs.predecessors.size == 1) {
-            val rule = asg.rhs.predecessors.first()
-            if (rule in rules) {
-                rules[asg.lhs] = rules[rule]!!
-            } else {
-                rules[asg.lhs] = rule
-            }
-        } else {
-            val rhs = asg.rhs.substitute(rules)
-            if (rhs is PhiExpr && rhs.predecessors.size == 1) {
+        val rhs = asg.rhs.substitute(rules)
+        if (rhs is PhiExpr) {
+            rhs -= asg.lhs
+            if (rhs.predecessors.size == 1) {
                 val rule = rhs.predecessors.first()
                 if (rule in rules) {
                     rules[asg.lhs] = rules[rule]!!
@@ -93,6 +119,24 @@ fun collectReplacements(
                 }
             }
         }
+//        if (asg.rhs is PhiExpr && asg.rhs.predecessors.size == 1) {
+//            val rule = asg.rhs.predecessors.first()
+//            if (rule in rules) {
+//                rules[asg.lhs] = rules[rule]!!
+//            } else {
+//                rules[asg.lhs] = rule
+//            }
+//        } else {
+//            val rhs = asg.rhs.substitute(rules)
+//            if (rhs is PhiExpr && rhs.predecessors.size == 1) {
+//                val rule = rhs.predecessors.first()
+//                if (rule in rules) {
+//                    rules[asg.lhs] = rules[rule]!!
+//                } else {
+//                    rules[asg.lhs] = rule
+//                }
+//            }
+//        }
     }
 
     when (val exit = bb.exit) {

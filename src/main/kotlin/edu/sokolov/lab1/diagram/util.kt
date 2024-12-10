@@ -13,7 +13,7 @@ fun BasicBlock.toDiagramBuilder(visited: HashMap<BasicBlock, DNode> = hashMapOf(
     val id = "$name\$${bbcounter++}"
 
     val nodeContent = when {
-        children.isEmpty() -> if (exit is BasicBlock.Exit.NoNext) "exit" else " "
+        children.isEmpty() -> if (exit is BasicBlock.Exit.NoNext) "exit" else "_"
         else -> nodesToString()
     }
     val node = DNode(content = nodeContent, id = id)

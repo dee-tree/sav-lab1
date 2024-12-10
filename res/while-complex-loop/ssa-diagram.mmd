@@ -1,0 +1,75 @@
+---
+title: while-complex-loop
+---
+flowchart TD
+	cond$151{"((x$0 % 2) == 0)"}:::defstyle
+	if_true$147("_"):::defstyle
+	if_cond$132("__tmp$11 = v$3<br>__tmp$12 = 16<br>__tmp$13 = (v$3 == 16)"):::defstyle
+	null$135("__tmp$54 = v$10<br>__tmp$55 = 0<br>__tmp$56 = (__tmp$54 > 0)<br>ploop1-1$9 = 0<br>ploop1-2$9 = (__tmp$54 > 0)"):::defstyle
+	if_cond$150("__tmp$37 = x$0<br>__tmp$38 = 2<br>__tmp$39 = (x$0 % 2)<br>__tmp$40 = 0<br>__tmp$41 = ((x$0 % 2) == 0)"):::defstyle
+	if_merged$157("_"):::defstyle
+	cond$130{"ploop1-2$1"}:::defstyle
+	if_true$152("__tmp$32 = 1<br>v$16 = (v$10 + 1)<br>__tmp$31 = v$10"):::defstyle
+	cond$146{"(v$10 == 1)"}:::defstyle
+	if_merged$141("__tmp$18 = v$3<br>__tmp$19 = 2<br>__tmp$20 = (v$3 * 2)<br>xx$0 = (v$3 * 2)<br>__tmp$21 = xx$0<br>__tmp$22 = v$3<br>__tmp$23 = (__tmp$21 > __tmp$22)<br>ploop2-2$0 = (__tmp$21 > __tmp$22)"):::defstyle
+	cond$133{"(v$3 == 16)"}:::defstyle
+	if_merged$153("__tmp$42 = φ(__tmp$34, __tmp$31)<br>v$20 = φ(v$18, v$16)"):::defstyle
+	if_true$139("_"):::defstyle
+	cond$143{"ploop2-2$1"}:::defstyle
+	if_cond$154("__tmp$44 = xx$6<br>__tmp$45 = 55<br>__tmp$46 = (xx$6 == 55)"):::defstyle
+	cond$155{"(xx$6 == 55)"}:::defstyle
+	if_merged$149("__tmp$29 = 1<br>xx$6 = (xx$1 - 1)<br>__tmp$28 = xx$1"):::defstyle
+	while_start$142("xx$1 = φ(xx$0, xx$6)<br>v$10 = φ(v$20, v$3)<br>ploop2-2$1 = φ(ploop2-2$14, ploop2-2$0)"):::defstyle
+	if_true$134("_"):::defstyle
+	if_true$156("_"):::defstyle
+	if_cond$137("__tmp$15 = v$3<br>__tmp$16 = 44<br>__tmp$17 = (v$3 == 44)"):::defstyle
+	entry$128("__tmp$0 = 35<br>__tmp$1 = 1<br>__tmp$2 = (35 + 1)<br>v$0 = (35 + 1)<br>__tmp$3 = v$0<br>__tmp$4 = 0<br>__tmp$5 = (__tmp$3 > 0)<br>ploop1-1$0 = 0<br>ploop1-2$0 = (__tmp$3 > 0)"):::defstyle
+	if_false$159("__tmp$35 = 1<br>v$18 = (v$10 - 1)<br>__tmp$34 = v$10"):::defstyle
+	while_exit$140("exit"):::defstyle
+	cond$138{"(v$3 == 44)"}:::defstyle
+	if_merged$136("_"):::defstyle
+	if_cond$145("__tmp$25 = v$10<br>__tmp$26 = 1<br>__tmp$27 = (v$10 == 1)"):::defstyle
+	while_body$144("_"):::defstyle
+	while_start$129("v$1 = φ(v$3, v$0, v$10)<br>ploop1-1$1 = φ(ploop1-1$9, ploop1-1$0)<br>ploop1-2$1 = φ(ploop1-2$9, ploop1-2$0)"):::defstyle
+	while_exit$148("__tmp$50 = v$10<br>__tmp$51 = print$0<br>__tmp$52 = print$0(v$10)"):::defstyle
+	null$158("__tmp$47 = xx$6<br>__tmp$48 = v$20<br>__tmp$49 = (__tmp$47 > __tmp$48)<br>ploop2-2$14 = (__tmp$47 > __tmp$48)"):::defstyle
+	while_body$131("__tmp$7 = 1<br>v$3 = (v$1 - 1)<br>__tmp$6 = v$1"):::defstyle
+	if_true$134 -->  null$135
+	if_true$152 -->  if_merged$153
+	cond$133 --> |"true"| if_true$134
+	while_body$131 -->  if_cond$132
+	null$158 -->  while_start$142
+	if_merged$136 -->  if_cond$137
+	while_start$129 -->  cond$130
+	entry$128 -->  while_start$129
+	cond$143 --> |"true"| while_body$144
+	if_merged$141 -->  while_start$142
+	while_body$144 -->  if_cond$145
+	if_true$139 -->  while_exit$140
+	while_exit$148 -->  null$135
+	if_merged$149 -->  if_cond$150
+	cond$155 --> |"true"| if_true$156
+	while_start$142 -->  cond$143
+	if_cond$150 -->  cond$151
+	cond$155 --> |"false"| if_merged$157
+	cond$151 --> |"false"| if_false$159
+	cond$130 --> |"true"| while_body$131
+	cond$133 --> |"false"| if_merged$136
+	cond$151 --> |"true"| if_true$152
+	cond$143 --> |"false"| while_exit$148
+	if_cond$137 -->  cond$138
+	cond$130 --> |"false"| while_exit$140
+	null$135 -->  while_start$129
+	if_true$147 -->  while_exit$148
+	if_merged$153 -->  if_cond$154
+	if_cond$145 -->  cond$146
+	cond$138 --> |"false"| if_merged$141
+	cond$146 --> |"true"| if_true$147
+	if_cond$132 -->  cond$133
+	cond$146 --> |"false"| if_merged$149
+	if_merged$157 -->  null$158
+	if_cond$154 -->  cond$155
+	if_false$159 -->  if_merged$153
+	cond$138 --> |"true"| if_true$139
+	if_true$156 -->  while_exit$148
+classDef defstyle text-align: left;

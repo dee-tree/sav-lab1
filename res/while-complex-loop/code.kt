@@ -12,7 +12,7 @@ fun hello() {
         while (xx > v) {
             if (v == 1) break
             xx--
-            if (x % 2 == 0) v++
+            if (x % 2 == 0) v++ else v--
             if (xx == 55) break
         }
 

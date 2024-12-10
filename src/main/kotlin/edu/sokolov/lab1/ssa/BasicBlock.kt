@@ -21,6 +21,7 @@ class BasicBlock(next: Exit = Exit.NoNext, val name: String? = null) : Statement
         get() = preds
 
     fun addPredecessor(pred: BasicBlock) {
+        if (pred in preds) return
         preds += pred
     }
 

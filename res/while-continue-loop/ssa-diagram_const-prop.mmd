@@ -1,20 +1,26 @@
+---
+title: while-continue-loop
+---
 flowchart TD
-	while_start$10("v$1 = φ(v$3, v$0)<br>ploop0-1$1 = φ(ploop0-1$0)<br>ploop0-2$1 = φ(ploop0-2$0)")
-	while_body$12("v$3 = (v$1 - 1)<br>__tmp$6 = v$1")
-	if_true$15("__tmp$9 = ContinueExpr(label=null)")
-	cond$14{"(v$3 == 16)"}
-	entry$9("v$0 = (35 + 1)<br>__tmp$3 = v$0<br>__tmp$4 = 0<br>__tmp$5 = (__tmp$3 > 0)<br>ploop0-1$0 = 0<br>ploop0-2$0 = (__tmp$3 > 0)")
-	if_merged$16("__tmp$16 = print$0(v$3)")
-	cond$11{"ploop0-2$1"}
-	if_cond$13(" ")
-	while_exit$17("exit")
-	if_merged$16 -->  while_start$10
-	if_cond$13 -->  cond$14
-	while_start$10 -->  cond$11
-	if_true$15 -->  while_start$10
-	cond$14 --> |"true"| if_true$15
-	cond$14 --> |"false"| if_merged$16
-	cond$11 --> |"false"| while_exit$17
-	while_body$12 -->  if_cond$13
-	cond$11 --> |"true"| while_body$12
-	entry$9 -->  while_start$10
+	if_true$16("_"):::defstyle
+	if_merged$18("__tmp$14 = v$3<br>__tmp$15 = print$0<br>__tmp$16 = print$0(v$3)"):::defstyle
+	while_exit$19("exit"):::defstyle
+	while_start$11("v$1 = φ(v$3, v$0)<br>ploop1-1$1 = φ(ploop1-1$7, ploop1-1$0)<br>ploop1-2$1 = φ(ploop1-2$7, ploop1-2$0)"):::defstyle
+	entry$10("__tmp$0 = 35<br>__tmp$1 = 1<br>__tmp$2 = (35 + 1)<br>v$0 = (35 + 1)<br>__tmp$3 = v$0<br>__tmp$4 = 0<br>__tmp$5 = (__tmp$3 > 0)<br>ploop1-1$0 = 0<br>ploop1-2$0 = (__tmp$3 > 0)"):::defstyle
+	cond$12{"ploop1-2$1"}:::defstyle
+	null$17("__tmp$18 = v$3<br>__tmp$19 = 0<br>__tmp$20 = (__tmp$18 > 0)<br>ploop1-1$7 = 0<br>ploop1-2$7 = (__tmp$18 > 0)"):::defstyle
+	cond$15{"(v$3 == 16)"}:::defstyle
+	if_cond$14("__tmp$11 = v$3<br>__tmp$12 = 16<br>__tmp$13 = (v$3 == 16)"):::defstyle
+	while_body$13("__tmp$7 = 1<br>v$3 = (v$1 - 1)<br>__tmp$6 = v$1"):::defstyle
+	cond$12 --> |"true"| while_body$13
+	null$17 -->  while_start$11
+	entry$10 -->  while_start$11
+	if_merged$18 -->  null$17
+	while_body$13 -->  if_cond$14
+	cond$15 --> |"false"| if_merged$18
+	if_cond$14 -->  cond$15
+	cond$15 --> |"true"| if_true$16
+	cond$12 --> |"false"| while_exit$19
+	if_true$16 -->  null$17
+	while_start$11 -->  cond$12
+classDef defstyle text-align: left;
